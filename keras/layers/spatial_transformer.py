@@ -158,7 +158,7 @@ class SpatialTransformer(Layer):
         indices_grid = tf.tile(indices_grid, tf.pack([batch_size]))
         indices_grid = tf.reshape(indices_grid, tf.pack([batch_size, 3, -1]))
 
-        transformed_grid = tf.batch_matmul(affine_transformation, indices_grid)
+        transformed_grid = tf.matmul(affine_transformation, indices_grid) # tf.batch_matmul(affine_transformation, indices_grid)
         x_s = tf.slice(transformed_grid, [0, 0, 0], [-1, 1, -1])
         y_s = tf.slice(transformed_grid, [0, 1, 0], [-1, 1, -1])
         x_s_flatten = tf.reshape(x_s, [-1])
