@@ -134,7 +134,7 @@ class SpatialTransformer(Layer):
         x_coordinates = tf.reshape(x_coordinates, shape=(1, -1))
         y_coordinates = tf.reshape(y_coordinates, shape=(1, -1))
         ones = tf.ones_like(x_coordinates)
-        indices_grid = tf.concat(0, [x_coordinates, y_coordinates, ones])
+        indices_grid = tf.concat_v2(0, [x_coordinates, y_coordinates, ones])
         return indices_grid
 
     def _transform(self, affine_transformation, input_shape, output_size):
@@ -154,9 +154,9 @@ class SpatialTransformer(Layer):
         output_width = output_size[1]
         indices_grid = self._meshgrid(output_height, output_width)
         indices_grid = tf.expand_dims(indices_grid, 0)
-        indices_grid = tf.reshape(indices_grid, [-1]) # flatten?
-        indices_grid = tf.tile(indices_grid, tf.pack([batch_size]))
-        indices_grid = tf.reshape(indices_grid, tf.pack([batch_size, 3, -1]))
+        indices_grid = tf.reshape(indices_grid, [-1])   # flatten?
+        indices_grid = tf.tile(indices_grid, tf.stack([batch_size]))
+        indices_grid = tf.reshape(indices_grid, tf.stack([batch_size, 3, -1]))
 
         transformed_grid = tf.matmul(affine_transformation, indices_grid) # tf.batch_matmul(affine_transformation, indices_grid)
         x_s = tf.slice(transformed_grid, [0, 0, 0], [-1, 1, -1])
