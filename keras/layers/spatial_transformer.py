@@ -5,9 +5,9 @@ Example:
 https://github.com/oarriaga/spatial_transformer_networks/blob/master/src/mnist_cluttered_example.ipynb
 """
 
-
 from keras.layers.core import Layer
 import tensorflow as tf
+
 
 class SpatialTransformer(Layer):
     """Spatial Transformer Layer
@@ -58,7 +58,7 @@ class SpatialTransformer(Layer):
 
     def _repeat(self, x, num_repeats):
         ones = tf.ones((1, num_repeats), dtype='int32')
-        x = tf.reshape(x, shape=(-1,1))
+        x = tf.reshape(x, shape=(-1, 1))
         x = tf.matmul(x, ones)
         return tf.reshape(x, [-1])
 
@@ -68,14 +68,14 @@ class SpatialTransformer(Layer):
         width = tf.shape(image)[2]
         num_channels = tf.shape(image)[3]
 
-        x = tf.cast(x , dtype='float32')
-        y = tf.cast(y , dtype='float32')
+        x = tf.cast(x, dtype='float32')
+        y = tf.cast(y, dtype='float32')
 
         height_float = tf.cast(height, dtype='float32')
         width_float = tf.cast(width, dtype='float32')
 
         output_height = output_size[0]
-        output_width  = output_size[1]
+        output_width = output_size[1]
 
         x = .5*(x + 1.0)*(width_float)
         y = .5*(y + 1.0)*(height_float)
@@ -138,13 +138,23 @@ class SpatialTransformer(Layer):
         return indices_grid
 
     def _transform(self, affine_transformation, input_shape, output_size):
+        """
+        Apply the affine transformation to the input
+
+        :param affine_transformation: Output of the localisation net
+        :param input_shape:
+        :param output_size:
+        :return:
+        """
         batch_size = tf.shape(input_shape)[0]
         height = tf.shape(input_shape)[1]
         width = tf.shape(input_shape)[2]
         num_channels = tf.shape(input_shape)[3]
 
-        affine_transformation = tf.reshape(affine_transformation, shape=(batch_size,2,3))
-
+        affine_transformation = tf.reshape(affine_transformation,
+                                           shape=(batch_size, 2, 3))
+        # ??? Is this necessary ???
+        # affine_transformation is reshaped from size (None, 2, 3) to (None, 2, 3)
         affine_transformation = tf.reshape(affine_transformation, (-1, 2, 3))
         affine_transformation = tf.cast(affine_transformation, 'float32')
 
@@ -158,19 +168,21 @@ class SpatialTransformer(Layer):
         indices_grid = tf.tile(indices_grid, tf.stack([batch_size]))
         indices_grid = tf.reshape(indices_grid, tf.stack([batch_size, 3, -1]))
 
-        transformed_grid = tf.matmul(affine_transformation, indices_grid) # tf.batch_matmul(affine_transformation, indices_grid)
+        transformed_grid = tf.matmul(affine_transformation, indices_grid)
+        # OLD: tf.batch_matmul(affine_transformation, indices_grid)
         x_s = tf.slice(transformed_grid, [0, 0, 0], [-1, 1, -1])
         y_s = tf.slice(transformed_grid, [0, 1, 0], [-1, 1, -1])
         x_s_flatten = tf.reshape(x_s, [-1])
         y_s_flatten = tf.reshape(y_s, [-1])
 
         transformed_image = self._interpolate(input_shape,
-                                                x_s_flatten,
-                                                y_s_flatten,
-                                                output_size)
+                                              x_s_flatten,
+                                              y_s_flatten,
+                                              output_size)
 
-        transformed_image = tf.reshape(transformed_image, shape=(batch_size,
-                                                                output_height,
-                                                                output_width,
-                                                                num_channels))
+        transformed_image = tf.reshape(transformed_image,
+                                       shape=(batch_size,
+                                              output_height,
+                                              output_width,
+                                              num_channels))
         return transformed_image
